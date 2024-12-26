@@ -1,1 +1,71 @@
 
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.26;
+
+contract Twitter{
+    uint16 Max_Tweet_Length=280;
+    //create a struct
+    struct Tweet{
+        address auther;
+        string  content;
+        uint256 timeStamp;
+        uint256 likes;
+        uint256 id;
+    }
+    //create a map
+    mapping(address=>Tweet[]) public myMapp;
+    address msgowner;
+    constructor(){
+        msgowner=msg.sender;
+    }
+    modifier onlyOwner(){
+        require(msgowner==msg.sender,"you are not owner");
+        _;
+    }
+    function changeMaxTweetLength(uint16 newlength) public onlyOwner {
+        Max_Tweet_Length=newlength;
+    }
+    //Event creation
+     event TweeCreated(address auther,uint256 likeId,uint256 timeStamp,string content) ;
+    //tweet like event
+    event TweetLike(address liker,address auther,uint256 tweetId,uint256 likecnt);
+    //setmap
+    function CreateTweet(string memory _tewwet) public {
+        //condition must be ttrue before execution of this code
+        require(bytes(_tewwet).length<=Max_Tweet_Length,"your tweet length is to long");
+        Tweet memory newtweet=Tweet({
+            auther:msg.sender,
+            content:_tewwet,
+            timeStamp:block.timestamp,
+            likes:0,
+            id:myMapp[msg.sender].length
+        });
+        myMapp[msg.sender].push(newtweet);
+        emit TweeCreated(newtweet.auther, newtweet.id,newtweet.timeStamp, newtweet.content);
+    }
+    //hit like on twitt
+    function Like(address auther,uint256 id) external  {
+        require(myMapp[auther][id].id==id,"Id does't exits");
+       myMapp[auther][id].likes++;
+       emit TweetLike(msg.sender, auther, id, myMapp[auther][id].likes);
+    }
+    //unlike
+    function Unlike(address auther,uint256 id) external {
+         require(myMapp[auther][id].id==id,"Id does't exits");
+         require(myMapp[auther][id].likes>0,"There is 0 likes");
+         myMapp[auther][id].likes--;
+    }
+    //show twit
+    function getTwit(address owner, uint8 i) public view returns (Tweet memory){
+        return myMapp[owner][i];
+    }
+    //getall Twit
+    function getAllTwit(address owner) public view returns (Tweet[] memory){
+        return myMapp[owner];
+    }
+    //maxtweet length
+    function showTweetLength()public view returns (uint16){
+        return Max_Tweet_Length;
+    }
+    
+}
